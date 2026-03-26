@@ -1,22 +1,27 @@
 uint8_t led = 13;
 
 uint8_t sensorL= A0;
-uint8_t sensorR = A2;
+uint8_t sensorR = A1;
+uint8_t sensorL_Far= A2;
+uint8_t sensorR_Far = A3;
 
 uint8_t motorL_pwm = 6;
-uint8_t motorL_backward = 8;
-uint8_t motorL_forward = 7;
+uint8_t motorL_backward = 7;
+uint8_t motorL_forward = 8;
 
 uint8_t motorR_pwm = 3;
 uint8_t motorR_backward = 4;
 uint8_t motorR_forward = 2;
 
-int speed = 200;
+#define MAX 150
+int speed = MAX;
 
 int sensorL_value = 0;
 int sensorR_value=0;
+int sensorL_Far_value = 0;
+int sensorR_Far_value=0;
 
-const int line_threshold = 500;
+const int line_threshold = 700;
 
 void setup() {
   // put your setup code here, to run once:
@@ -40,7 +45,10 @@ void loop() {
   // put your main code here, to run repeatedly:
   sensorL_value = analogRead(sensorL);
   sensorR_value = analogRead(sensorR);
-  if (sensorR_value >= line_threshold && sensorL_value >= line_threshold)
+  sensorL_Far_value = analogRead(sensorL_Far);
+  sensorR_Far_value = analogRead(sensorR_Far);
+
+  if (sensorR_value >= line_threshold || sensorL_value >= line_threshold)
     digitalWrite(led, HIGH);
   else
     digitalWrite(led, LOW);
@@ -48,15 +56,19 @@ void loop() {
   debug();
 
   if (sensorL_value >= line_threshold && sensorR_value >= line_threshold){
+  //  speed=MAX;
     forward();
   }
-  else if (sensorR_value >= line_threshold && sensorL_value < line_threshold){
+  else if ((sensorL_value < line_threshold || sensorL_Far_value < line_threshold) && sensorR_value >= line_threshold){
+ //   speed=MAX*0.7;
     right();
   }
-  else if (sensorL_value >= line_threshold && sensorR_value < line_threshold){
+  else if ((sensorR_value < line_threshold || sensorR_Far_value < line_threshold) && sensorL_value >= line_threshold){
+  //  speed=MAX*0,7;
     left();
   }
-  else if (sensorR_value < line_threshold && sensorL_value < line_threshold){
+  
+  else{
     stop();
   }
   
