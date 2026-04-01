@@ -13,7 +13,7 @@ uint8_t motorR_pwm = 3;
 uint8_t motorR_backward = 4;
 uint8_t motorR_forward = 2;
 
-#define MAX 150
+#define MAX 200
 int speed = MAX;
 
 int sensorL_value = 0;
@@ -43,30 +43,38 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  sensorL_value = analogRead(sensorL);
-  sensorR_value = analogRead(sensorR);
-  sensorL_Far_value = analogRead(sensorL_Far);
-  sensorR_Far_value = analogRead(sensorR_Far);
+  sensorL_value = analogRead(sensorL) >= line_threshold;
+  sensorR_value = analogRead(sensorR) >= line_threshold;
+  sensorL_Far_value = analogRead(sensorL_Far) >= line_threshold;
+  sensorR_Far_value = analogRead(sensorR_Far) >= line_threshold;
 
-  if (sensorR_value >= line_threshold || sensorL_value >= line_threshold)
+  if (sensorR_value || sensorL_value)
     digitalWrite(led, HIGH);
   else
     digitalWrite(led, LOW);
 
   debug();
 
-  if (sensorL_value >= line_threshold && sensorR_value >= line_threshold){
+  if ((sensorL_value && sensorR_value && !sensorL_Far_value && !sensorR_Far_value) || (sensorL_value && sensorR_value && sensorL_Far_value && sensorR_Far_value)){
   //  speed=MAX;
     forward();
   }
-  else if ((sensorL_value < line_threshold || sensorL_Far_value < line_threshold) && sensorR_value >= line_threshold){
- //   speed=MAX*0.7;
+  else if((sensorR_value && !sensorL_value) ){
     right();
   }
-  else if ((sensorR_value < line_threshold || sensorR_Far_value < line_threshold) && sensorL_value >= line_threshold){
-  //  speed=MAX*0,7;
+  
+  else if((sensorL_value && !sensorR_value) ){
     left();
   }
+  else if (sensorR_Far_value){
+ //   speed=MAX*0.7;
+    hardright();
+  }
+  else if (sensorL_Far_value){
+  //  speed=MAX*0,7;
+    hardleft();
+  }
+  
   
   else{
     stop();
@@ -85,9 +93,19 @@ void forward(){
 }
 
 void left(){
+  digitalWrite(motorL_backward, LOW);
+  digitalWrite(motorL_forward, HIGH);
+  analogWrite(motorL_pwm, speed/1.5);
+
+  digitalWrite(motorR_backward, LOW);
+  digitalWrite(motorR_forward, HIGH);
+  analogWrite(motorR_pwm, speed);
+}
+
+void hardleft(){
   digitalWrite(motorL_backward, HIGH);
   digitalWrite(motorL_forward, LOW);
-  analogWrite(motorL_pwm, speed);
+  analogWrite(motorL_pwm, 60);
 
   digitalWrite(motorR_backward, LOW);
   digitalWrite(motorR_forward, HIGH);
@@ -99,9 +117,19 @@ void right(){
   digitalWrite(motorL_forward, HIGH);
   analogWrite(motorL_pwm, speed);
 
+  digitalWrite(motorR_backward, LOW);
+  digitalWrite(motorR_forward, HIGH);
+  analogWrite(motorR_pwm, speed/1.5);
+}
+
+void hardright(){
+  digitalWrite(motorL_backward, LOW);
+  digitalWrite(motorL_forward, HIGH);
+  analogWrite(motorL_pwm, speed);
+
   digitalWrite(motorR_backward, HIGH);
   digitalWrite(motorR_forward, LOW);
-  analogWrite(motorR_pwm, speed);
+  analogWrite(motorR_pwm, 60);
 }
 
 void stop(){
@@ -113,8 +141,12 @@ void stop(){
 }
 
 void debug(){
-  Serial.print("0 ");
+//  Serial.print("0 ");
   Serial.print(sensorR_value);
   Serial.print(" ");
-  Serial.println(sensorL_value);
+  Serial.print(sensorL_value);
+  Serial.print(" ");
+  Serial.print(sensorR_Far_value);
+  Serial.print(" ");
+  Serial.println(sensorL_Far_value);
 }
